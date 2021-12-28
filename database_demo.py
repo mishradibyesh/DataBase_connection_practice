@@ -4,55 +4,111 @@
 """
 from getpass import getpass
 from mysql.connector import connect, Error
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-def connection(query):
-    try:
-        with connect(host="localhost",
-                     user="root",
-                     password="Dibyesh@3",
-                     database="student_details")as connection:
-                    print(connection)
-                    with connection.cursor() as cursor:
-                        cursor.execute(query)
-                        for values in cursor.fetchall():
-                            print(values)
-    except Error as e:
-        print(e)
 
-def create_table():
-    query = "CREATE TABLE Persons " \
-            "(PersonID int," \
-            "LastName varchar(255)," \
-            "FirstName varchar(255)," \
-            "City varchar(255));"
-    query2 = "CREATE TABLE pet(name VARCHAR(20)," \
-             "owner VARCHAR(20)," \
-             "species VARCHAR(20)," \
-             "sex CHAR(1)," \
-             "birth DATE," \
-             "death DATE);"
-    # connection(query)
-    connection(query2)
+class DBConnection:
+    """Contains method which establishes connection with database"""
 
-def show_tables():
-    query = "show tables"
-    connection(query)
+    @staticmethod
+    def establish_connection():
+        """
+        Establish connection with database
+        return: connection
+        """
+        try:
+            connection=connect(
+                host=os.getenv('host'),
+                user=os.getenv('user_name'),
+                password=os.getenv('pass'),
+                database='student_details'
+            )
+            print("Connection established successfully...")
+            return connection
+        except Error as e:
+            print(e)
 
-show_tables()
 
-def insert_in_table():
-    query = "INSERT INTO pet VALUES ('german','sheffered','trester','M','1999-03-30',NULL);"
-    query1 = "INSERT INTO pet VALUES ('pitBull','fered','trester','M','1999-03-30',NULL);"
-    connection(query1)
+class DatabaseOperations:
+    def __init__(self):
+        self.connection = DBConnection.establish_connection()
+        self.cursor = self.connection.cursor()
 
-def show_table_data():
-    query = "select * from Persons"
-    connection(query)
+    def execute_query(self, query):
+        """
+        desc: execute query by passing it to cursor method
+        param : query:
+        return:None
+        """
+        self.cursor.execute(query)
+        self.connection.commit()
 
-show_table_data()
 
-def describe_table():
-    query = "describe pet"
-    connection(query)
+    def show_databases(self):
+        """Shows all the databases"""
+        self.cursor.execute('show databases')
+        for database in self.cursor.fetchall():
+            print(database)
 
-describe_table()
+    def show_tables(self):
+        self.cursor.execute('show tables')
+        for database in self.cursor.fetchall():
+            print(database)
+
+    def insert_in_table(self):
+        """
+        query to insert into table
+        """
+        query = "INSERT INTO pet VALUES ('german','sheffered','trester','M','1999-03-30',NULL);"
+        query1 = "INSERT INTO pet VALUES ('pitBull','ramesh','trester','M','1999-03-30',NULL);"
+        self.execute_query(query1)
+        self.execute_query(query)
+        print("inserted successfully")
+
+    def show_table_data(self):
+        query = "select * from pet"
+        self.execute_query(query)
+
+    def describe_table(self):
+        self.cursor.execute('describe pet')
+        for database in self.cursor.fetchall():
+            print(database)
+
+    def show_data(self, query):
+        """
+        Shows all the data for the query passed
+        param : query
+        return: None
+        """
+        self.cursor.execute(query)
+        for data in self.cursor.fetchall():
+            print(data)
+
+    def create_table(self):
+        "query to create table "
+
+        query = "CREATE TABLE Persons " \
+                "(PersonID int," \
+                "LastName varchar(255)," \
+                "FirstName varchar(255)," \
+                "City varchar(255));"
+        query2 = "CREATE TABLE pet(name VARCHAR(20)," \
+                 "owner VARCHAR(20)," \
+                 "species VARCHAR(20)," \
+                 "sex CHAR(1)," \
+                 "birth DATE," \
+                 "death DATE);"
+        self.execute_query(query)
+        self.execute_query(query2)
+
+
+operation = DatabaseOperations()
+operation.describe_table()
+operation.show_databases()
+operation.show_tables()
+operation.insert_in_table()
+operation.execute_query("UPDATE pet SET owner='Dibyesh' WHERE name='german'")
+operation.show_data('SELECT * FROM pet')
+operation.execute_query("DELETE FROM pet WHERE name = 'ramesh'")
